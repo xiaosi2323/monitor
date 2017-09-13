@@ -1,0 +1,134 @@
+{% extends 'adminlte/lib/base.html' %}
+{% block content %}
+    <div id="app">
+        <el-dialog title="系统详情" v-model="DialogDetailVisible">
+            <span>ID:  </span>
+            <el-tag type="primary">[[ Detail.Id ]]</el-tag>
+            <br/>
+            <span>系统名:  </span>
+            <el-tag type="primary">[[ Detail.Name ]]</el-tag>
+            <br/>
+            <span>创建时间:  </span>
+            <el-tag type="primary">[[ Detail.CreateTime ]]</el-tag>
+            <br/>
+            <span>修改时间:  </span>
+            <el-tag type="primary">[[ Detail.ChangeTime ]]</el-tag>
+            <br/>
+            <el-table :data="gridData">
+                <el-table-column property="date" label="日期" width="150"></el-table-column>
+                <el-table-column property="name" label="姓名" width="200"></el-table-column>
+                <el-table-column property="address" label="地址"></el-table-column>
+            </el-table>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="DialogDetailVisible = false">取 消</el-button>
+                <el-button type="primary" @click="DialogDetailVisible = false">确 定</el-button>
+            </div>
+        </el-dialog>
+        <el-table
+                :data="tableData"
+                style="width: 100%">
+            <el-table-column
+                    label="ID"
+                    prop="Id"
+                    width="50">
+            </el-table-column>
+            <el-table-column
+                    label="系统名"
+                    width="180"
+                    prop="Name"
+            >
+            </el-table-column>
+            <el-table-column
+                    label="创建时间"
+                    width="200"
+                    prop="CreateTime"
+            >
+                <template scope="scope">
+                    <el-icon name="time"></el-icon>
+                    <span style="margin-left: 10px">[[ scope.row.CreateTime ]]</span>
+                </template>
+            </el-table-column>
+            <el-table-column
+                    label="修改时间"
+                    width="200"
+                    prop="ChangeTime"
+            >
+                <template scope="scope">
+                    <el-icon name="time"></el-icon>
+                    <span style="margin-left: 10px">[[ scope.row.ChangeTime ]]</span>
+                </template>
+            </el-table-column>
+            <el-table-column label="操作">
+                <template scope="scope">
+                    <el-button
+                            size="small"
+                            icon="document"
+                            type="primary"
+                            @click="handleDetail(scope.$index, scope.row)">
+                    </el-button>
+                    <el-button
+                            size="small"
+                            icon="edit"
+                            type="primary"
+                            @click="handleEdit(scope.$index, scope.row)">
+                    </el-button>
+                    <el-button
+                            size="small"
+                            icon="delete"
+                            type="primary"
+                            type="danger"
+                            @click="handleDelete(scope.$index, scope.row)">
+                    </el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+    </div>
+
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                tableData: [],
+                Detail: {},
+                DialogDetailVisible: false
+            },
+            created: function () {
+                NProgress.start();
+                this.$http.get('/api/system/list/').then(function (response) {
+                    this.tableData = response.body;
+                    NProgress.done();
+                }, function (response) {
+                    console.log(response);
+                    NProgress.done();
+                });
+
+            },
+            methods: {
+                handleDetail: function (index, row) {
+                    this.DialogDetailVisible = true;
+                    NProgress.start();
+                    this.$http.get('/api/system/' + row.Id).then(function (response) {
+                        this.Detail = response.body;
+                        NProgress.done();
+                    }, function (response) {
+                        console.log(response);
+                        NProgress.done();
+                    });
+                },
+                handleEdit: function (index, row) {
+                    console.log(index, row);
+                    this.$message('这是一条消息提示');
+                },
+                handleDelete: function (index, row) {
+                    console.log(index, row);
+                    this.$message({
+                        showClose: true,
+                        message: '错了哦，这是一条错误消息',
+                        type: 'error'
+                    });
+                }
+            },
+            delimiters: ["[[", "]]"]
+        })
+    </script>
+{% endblock %}

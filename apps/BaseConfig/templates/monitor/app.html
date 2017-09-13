@@ -1,0 +1,257 @@
+{% extends 'adminlte/lib/base.html' %}
+{% block content %}
+    <div id="app">
+        <el-row>
+            <el-col :span="24">
+                <el-card class="box-card" style="margin-bottom:  5px;">
+                    <div slot="header" class="clearfix">
+                        <span style="font-size: 20px;">应用</span>
+                    </div>
+                    <el-form :model="SearchForm" :inline="true" class="demo-form-inline" la>
+                        <el-form-item label="实例名">
+                            <el-input v-model="SearchForm.Name" placeholder="实例名"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="onSearch">查询</el-button>
+                        </el-form-item>
+                    </el-form>
+                </el-card>
+            </el-col>
+
+        </el-row>
+        <el-row>
+            <el-dialog title="系统详情" v-model="DialogDetailVisible">
+                <el-form inline>
+                    <el-form-item label="ID">
+                        <el-tag type="primary">[[ Detail.Id ]]</el-tag>
+                    </el-form-item>
+                    <el-form-item label="实例名">
+                        <el-tag type="primary">[[ Detail.Name ]]</el-tag>
+                    </el-form-item>
+                    <el-form-item label="系统名">
+                        <el-tag type="primary" v-if="Detail.SystemId">[[ Detail.SystemId.Name ]]</el-tag>
+                        <el-tag type="primary" v-else="Detail.SystemId">无</el-tag>
+                    </el-form-item>
+                    <el-form-item label="备注">
+                        <el-tag type="primary">[[ Detail.Note ]]</el-tag>
+                    </el-form-item>
+                </el-form>
+                <el-table :data="DetailTable"
+                          border
+                          height="250">
+                    <el-table-column prop="Id" label="主机ID"></el-table-column>
+                    <el-table-column prop="Name" label="主机名"></el-table-column>
+                    <el-table-column prop="Ip" label="主机IP"></el-table-column>
+                    <el-table-column prop="Note" label="备注"></el-table-column>
+                </el-table>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="DialogDetailVisible = false">取 消</el-button>
+                    <el-button type="primary" @click="DialogDetailVisible = false">确 定</el-button>
+                </div>
+            </el-dialog>
+            <el-table
+                    :data="tableData"
+                    style="width: 100%">
+                <el-table-column
+                        label="ID"
+                        prop="Id"
+                        width="100">
+                </el-table-column>
+                <el-table-column
+                        label="实例名"
+                        width="180"
+                        prop="Name"
+                >
+                </el-table-column>
+                <el-table-column
+                        label="系统名"
+                        width="100"
+                        prop="SystemId.Name"
+                >
+                    <template scope="scope">
+                        <el-tag v-if="scope.row.SystemId">[[ scope.row.SystemId.Name ]]</el-tag>
+                        <el-tag v-else="scope.row.SystemId">无</el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column
+                        label="创建时间"
+                        width="180"
+                        prop="CreateTime"
+                >
+                    <template scope="scope">
+                        <el-icon name="time"></el-icon>
+                        <span style="margin-left: 10px">[[ scope.row.CreateTime ]]</span>
+                    </template>
+                </el-table-column>
+                <el-table-column
+                        label="修改时间"
+                        width="180"
+                        prop="ChangeTime"
+                >
+                </el-table-column>
+
+                <el-table-column label="操作">
+                    <template scope="scope">
+                        <el-button
+                                size="small"
+                                icon="document"
+                                type="primary"
+                                @click="handleDetail(scope.$index, scope.row)">
+                        </el-button>
+                        <el-button
+                                size="small"
+                                icon="edit"
+                                type="primary"
+                                @click="handleEdit(scope.$index, scope.row)">
+                        </el-button>
+                        <el-button
+                                size="small"
+                                icon="delete"
+                                type="primary"
+                                type="danger"
+                                @click="handleDelete(scope.$index, scope.row)">
+                        </el-button>
+                    </template>
+                </el-table-column>
+                <el-table-column
+                        label="备注"
+                        width="80"
+                        prop="Note"
+                >
+                </el-table-column>
+            </el-table>
+            <template>
+                <el-pagination
+                        :page-size="20"
+                        @current-change="handleCurrentChange"
+                        layout="prev, pager, next, jumper, ->, total, slot"
+                        :total="count">
+                </el-pagination>
+            </template>
+        </el-row>
+    </div>
+
+    <script>
+        function getCookie(name) {
+            var arr, reg = new RegExp("(^| )" + name + "=([^;]*)(;|$)"); //正则匹配
+            if (arr = document.cookie.match(reg)) {
+                return unescape(arr[2]);
+            }
+            else {
+                return null;
+            }
+        }
+        new Vue({
+            el: '#app',
+            data: {
+                tableData: [],
+                Detail: {},
+                SearchForm: {
+                    Name: ''
+                },
+                DetailTable: [],
+                DialogDetailVisible: false,
+                count: 0,
+                currentPage: 1,
+                visible2: false
+            },
+            created: function () {
+                NProgress.start();
+                this.$http.get('/api/instantiation/list/').then(function (response) {
+                    this.tableData = response.body.results;
+                    this.count = response.body.count;
+                    NProgress.done();
+                }, function (response) {
+                    this.$message({
+                        showClose: true,
+                        message: response.body.detail,
+                        type: 'error'
+                    });
+                    NProgress.done();
+                });
+
+            },
+            methods: {
+                onSearch: function () {
+                    NProgress.start();
+                    this.$http.get('/api/instantiation/list/' + "?search=" + this.SearchForm.Name).then(function (response) {
+                        this.tableData = response.body.results;
+                        this.count = response.body.count;
+                        NProgress.done();
+                    }, function (response) {
+                        this.$message({
+                            showClose: true,
+                            message: response.body.detail,
+                            type: 'error'
+                        });
+                        NProgress.done();
+                    });
+                },
+                // 分页
+                handleCurrentChange: function (val) {
+                    NProgress.start();
+                    this.$http.get('/api/instantiation/list/' + "?page=" + val).then(function (response) {
+                        this.tableData = response.body.results;
+                        this.count = response.body.count;
+                        NProgress.done();
+                    }, function (response) {
+                        this.$message({
+                            showClose: true,
+                            message: response.body.detail,
+                            type: 'error'
+                        });
+                        NProgress.done();
+                    });
+                },
+                //详情
+                handleDetail: function (index, row) {
+                    this.DialogDetailVisible = true;
+                    NProgress.start();
+                    this.$http.get('/api/instantiation/' + row.Id).then(function (response) {
+                        this.Detail = response.body;
+                        this.DetailTable = this.Detail.HostId
+                        NProgress.done();
+                    }, function (response) {
+                        this.$message({
+                            showClose: true,
+                            message: response.body.detail,
+                            type: 'error'
+                        });
+                        NProgress.done();
+                    });
+                    NProgress.start();
+                },
+                // 编辑
+                handleEdit: function (index, row) {
+                    console.log(index, row);
+                    this.$message('这是一条消息提示');
+                },
+                // 删除
+                handleDelete: function (index, row) {
+                    NProgress.start();
+                    this.$http.delete('/api/system/' + row.Id, {
+                        headers: {
+                            "X-CSRFToken": getCookie("csrftoken")
+                        }
+                    }).then(function (response) {
+                        this.$message({
+                            showClose: true,
+                            message: '删除成功: ' + row.Name,
+                            type: 'info'
+                        });
+                        NProgress.done();
+                    }, function (response) {
+                        this.$message({
+                            showClose: true,
+                            message: response.body.detail,
+                            type: 'error'
+                        });
+                        NProgress.done();
+                    });
+
+                }
+            },
+            delimiters: ["[[", "]]"]
+        })
+    </script>
+{% endblock %}

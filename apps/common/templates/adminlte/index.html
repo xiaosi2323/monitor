@@ -1,0 +1,298 @@
+{% extends 'adminlte/lib/base.html' %}
+{% load adminlte_extras %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-lg-3 col-xs-6">
+            <!-- small box -->
+            <div class="small-box bg-aqua">
+                <div class="inner">
+                    <h3 id="zhibiao0">发生报警</h3>
+
+                    <p id="keys0">230</p>
+                </div>
+                <div class="inner">
+                    <h3 id="zhibiao1">处理报警</h3>
+
+                    <p id="keys1">124</p>
+                </div>
+                <div class="icon">
+                    <i class="ion ion-person-add"></i>
+                </div>
+                <a href="#" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+        <!-- ./col -->
+        <div class="col-lg-3 col-xs-6">
+            <!-- small box -->
+            <div class="small-box bg-green">
+                <div class="inner">
+                    <h3 id="zhibiao2">需整改企业</h3>
+
+                    <p id="keys2">49</p>
+                </div>
+                <div class="inner">
+                    <h3 id="zhibiao3">已整改企业</h3>
+
+                    <p id="keys3">34</p>
+                </div>
+                <div class="icon">
+                    <i class="ion ion-stats-bars"></i>
+                </div>
+                <a href="#" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+        <!-- ./col -->
+        <div class="col-lg-3 col-xs-6">
+            <!-- small box -->
+            <div class="small-box bg-yellow">
+                <div class="inner">
+                    <h3 id="zhibiao4">创建工单</h3>
+
+                    <p id="keys4">134</p>
+                </div>
+                <div class="inner">
+                    <h3 id="zhibiao5">处理工单</h3>
+
+                    <p id="keys5">24</p>
+                </div>
+                <div class="icon">
+                    <i class="ion ion-person-add"></i>
+                </div>
+                <a href="#" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+        <!-- ./col -->
+        <div class="col-lg-3 col-xs-6">
+            <!-- small box -->
+            <div class="small-box bg-red">
+                <div class="inner">
+                    <h3 id="zhibiao6">失信企业</h3>
+
+                    <p id="keys6">24</p>
+                </div>
+                <div class="inner">
+                    <h3 id="zhibiao7">失信从业人员</h3>
+
+                    <p id="keys7">65</p>
+                </div>
+                <div class="icon">
+                    <i class="ion ion-pie-graph"></i>
+                </div>
+                <a href="#" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+            </div>
+        </div>
+        <!-- ./col -->
+    </div>
+    <div class="row clearfix">
+        <div class="col-md-6">
+            <div id="express_order" style="height:400px;"></div>
+        </div>
+        <div class="col-md-6">
+            <div id="express_bill" style="height:400px;"></div>
+        </div>
+    </div>
+    <div class="row clearfix">
+        <div class="col-md-6">
+            <div id="Truck_Load_order" style="height:400px;"></div>
+        </div>
+        <div class="col-md-6">
+            <div id="Truck_Load_bill" style="height:400px;"></div>
+        </div>
+    </div>
+{% endblock %}
+{% block body_tail %}
+    <script type="text/javascript">
+        // 基于准备好的dom，初始化echarts实例
+        var express_order = echarts.init(document.getElementById('express_order'));
+        var express_bill = echarts.init(document.getElementById('express_bill'));
+        var Truck_Load_order = echarts.init(document.getElementById('Truck_Load_order'));
+        var Truck_Load_bill = echarts.init(document.getElementById('Truck_Load_bill'));
+        function setOptionDb(x, y1, y2, yName, title, charts) {
+            charts.hideLoading();
+            charts.setOption({
+                    title: {
+                        text: title
+                    },
+                    tooltip: {
+                        trigger: "axis"
+                    },
+                    toolbox: {
+                        show: true,
+                        feature: {
+                            dataZoom: {
+                                yAxisIndex: 'none'
+                            },
+                            dataView: {readOnly: false},
+                            magicType: {type: ['line', 'bar']},
+                            restore: {},
+                            saveAsImage: {}
+                        }
+                    },
+                    legend:{
+                        data:yName,
+                        x:'center',
+                        y:'top'
+                    },
+                    xAxis: {
+                        data: x
+                    },
+                    yAxis: {},
+                    series: [{
+                        name: yName[0],
+                        type: "line",
+                        data: y1
+                    }, {
+                        name: yName[1],
+                        type: "line",
+                        data: y2
+                    }]
+                }
+            );
+        }
+        function get_data() {
+            // 使用刚指定的配置项和数据显示图表。
+            $.ajax({
+                cache: false,
+                type: "GET",
+                url: "/api/business/index", //把表单数据发送到/weather
+                data: {"type": "charts", "name": "express_order"}, // 发送的数据
+                dataType: "json",
+                async: true,
+                beforeSend: function () {
+                    express_order.showLoading();
+                },
+                error: function (request) {
+                    express_order.hideLoading();
+                    alert("发送请求失败！");
+                },
+                success: function (result) {
+                    var express_order = echarts.init(document.getElementById('express_order'));
+                    var xAxis = [];
+                    var yAxis1 = [];
+                    var yAxis2 = [];
+                    var title = "快递订单量";
+                    var yName = ['同期', '今日'];
+                    for (var row in result) {
+                        xAxis.push(result[row]['key']);
+                        yAxis1.push(result[row]['value']);
+                        yAxis2.push(result[row]['value2']);
+                    }
+                    setOptionDb(xAxis, yAxis1, yAxis2, yName, title, express_order)
+
+                }
+            });
+            $.ajax({
+                cache: false,
+                type: "GET",
+                url: "/api/business/index", //把表单数据发送到/weather
+                data: {"type": "charts", "name": "express_bill"}, // 发送的数据
+                dataType: "json",
+                async: true,
+                beforeSend: function () {
+                    express_bill.showLoading();
+                },
+                error: function (request) {
+                    express_bill.hideLoading();
+                    alert("发送请求失败！");
+                },
+                success: function (result) {
+                    var express_bill = echarts.init(document.getElementById('express_bill'));
+                    var xAxis = [];
+                    var yAxis1 = [];
+                    var yAxis2 = [];
+                    var title = "快递开单量";
+                    var yName = ['同期', '今日'];
+                    for (var row in result) {
+                        xAxis.push(result[row]['key']);
+                        yAxis1.push(result[row]['value']);
+                        yAxis2.push(result[row]['value2']);
+                    }
+                    setOptionDb(xAxis, yAxis1, yAxis2, yName, title, express_bill)
+
+                }
+            });
+            $.ajax({
+                cache: false,
+                type: "GET",
+                url: "/api/business/index", //把表单数据发送到/weather
+                data: {"type": "charts", "name": "Truck_Load_order"}, // 发送的数据
+                dataType: "json",
+                async: true,
+                beforeSend: function () {
+                    Truck_Load_order.showLoading();
+                },
+                error: function (request) {
+                    Truck_Load_order.hideLoading();
+                    alert("发送请求失败！");
+                },
+                success: function (result) {
+                    var Truck_Load_order = echarts.init(document.getElementById('Truck_Load_order'));
+
+                    var xAxis = [];
+                    var yAxis1 = [];
+                    var yAxis2 = [];
+                    var title = "零担订单量";
+                    var yName = ['同期', '今日'];
+                    for (var row in result) {
+                        xAxis.push(result[row]['key']);
+                        yAxis1.push(result[row]['value']);
+                        yAxis2.push(result[row]['value2']);
+                    }
+                    setOptionDb(xAxis, yAxis1, yAxis2, yName, title, Truck_Load_order)
+
+                }
+            });
+            $.ajax({
+                cache: false,
+                type: "GET",
+                url: "/api/business/index", //把表单数据发送到/weather
+                data: {"type": "charts", "name": "Truck_Load_bill"}, // 发送的数据
+                dataType: "json",
+                async: true,
+                beforeSend: function () {
+                    Truck_Load_bill.showLoading();
+                },
+                error: function (request) {
+                    Truck_Load_bill.hideLoading();
+                    alert("发送请求失败！");
+                },
+                success: function (result) {
+                    var Truck_Load_bill = echarts.init(document.getElementById('Truck_Load_bill'));
+                    var xAxis = [];
+                    var yAxis1 = [];
+                    var yAxis2 = [];
+                    var title = "零担开单量";
+                    var yName = ['同期', '今日'];
+                    for (var row in result) {
+                        xAxis.push(result[row]['key']);
+                        yAxis1.push(result[row]['value']);
+                        yAxis2.push(result[row]['value2']);
+                    }
+                    setOptionDb(xAxis, yAxis1, yAxis2, yName, title, Truck_Load_bill)
+                }
+            });
+            $.ajax({
+                cache: false,
+                type: "GET",
+                url: "/api/business/index", //把表单数据发送到/weather
+                data: {"type": "zhibiao"}, // 发送的数据
+                async: true,
+                error: function (request) {
+                    alert("发送请求失败！");
+                },
+                success: function (result) {
+                    id = 0;
+                    for (x in result[0]) {
+                        $("#zhibiao" + id).text(result[0][x]);
+                        $("#keys" + id).text(x);
+                        id += 1
+                    }
+                }
+            });
+        }
+        get_data();
+        //    window.setTimeout(get_data, 3000);
+        setInterval(get_data, 10000);
+    </script>
+{% endblock %}

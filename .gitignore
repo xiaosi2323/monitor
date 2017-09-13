@@ -1,0 +1,6 @@
+/frontend/node_modules
+*/*.pyc
+/frontend/build
+/frontend/dist
+/.idea
+/backend/monitor.log

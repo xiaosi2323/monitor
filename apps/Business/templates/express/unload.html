@@ -1,0 +1,276 @@
+{% extends 'adminlte/lib/base.html' %}
+{% load adminlte_extras %}
+
+{% block content %}
+    <form id="form1" role="form" method="post" class="form-group container center-block">
+        <div class="form-group" id="raido_cx">
+            <label>
+                <input type="radio" name="type" checked="checked" value="cg">
+                常规查询
+            </label>
+            <label>
+                <input type="radio" name="type" value="db">
+                对比查询
+            </label>
+        </div>
+        <div class="container">
+            <div class="row clearfix">
+                <div id="form_time" class="col-md-7 column">
+                    <div id="time_condition" class="row clearfix">
+                        <div class="col-md-10 column">
+                            <div class="col-md-5">
+                                <label class="input-group-addon">开始时间</label>
+                                <input class="form-control form_datetime" id="start_time" name="start_time" type="text"
+                                       value="">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="input-group-addon">结束时间</label>
+                                <input class="form-control form_datetime" id="end_time" name="end_time" type="text"
+                                       value="">
+                            </div>
+                        </div>
+                    </div>
+                    <div id="t_time_condition" style="display: none" class="row clearfix">
+                        <div class="col-md-10 column">
+                            <div class="col-md-5">
+                                <label class="input-group-addon">开始时间</label>
+                                <input class="form-control form_datetime" id="t_start_time1" name="t_start_time1"
+                                       type="text"
+                                       value="">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="input-group-addon">结束时间</label>
+                                <input class="form-control form_datetime" id="t_end_time1" name="t_end_time1"
+                                       type="text"
+                                       value="">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="input-group-addon">开始时间</label>
+                                <input class="form-control form_datetime" id="t_start_time2" name="t_start_time2"
+                                       type="text"
+                                       value="">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="input-group-addon">结束时间</label>
+                                <input class="form-control" id="t_end_time2" name="t_end_time2" type="text"
+                                       value="" readonly>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 column">
+                    <div id="divgrouby" class="col-md-6">
+                        <label class="control-label">分组条件</label>
+                        <select class="form-control select2" id="groupby" name="groupby">
+                            <option value="YYYY-MM-DD hh24:mi">五分钟</option>
+                            <option value="YYYY-MM-DD hh24">小时</option>
+                            <option value="YYYY-MM-DD">天</option>
+                            <option value="YYYY-MM">月</option>
+                        </select>
+                    </div>
+                    <div id="t_divgrouby" style="display: none" class="col-md-6">
+                        <label class="control-label">分组条件</label>
+                        <select class="form-control select2" id="t_groupby" name="t_groupby">
+                            <option value="hh24:mi">五分钟</option>
+                            <option value="hh24">小时</option>
+                            <option value="DD">天</option>
+                            <option value="MM">月</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <input id="submit" type="button" value="查询" class="btn btn-primary"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <body>
+    <!-- 为 ECharts 准备一个具备大小（宽高）的 DOM -->
+    <div id="main" style="height:500px;border:1px solid #ccc;padding:10px;"></div>
+    </body>
+{% endblock %}
+{% block body_tail %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            datetime();
+            default_time();
+            Time_calculation();
+            get_data();
+
+        });
+
+        //    时间选择控件
+        function datetime() {
+            $('.form_datetime').datetimepicker({
+                format: 'yyyy-mm-dd hh:ii',
+                language: 'zh-CN',
+                weekStart: 1,
+                todayBtn: 1,
+                autoclose: 1,
+                todayHighlight: 1,
+                startView: 2,
+                forceParse: 0,
+                showMeridian: 1
+            });
+        }
+        //    设置默认时间
+        function default_time() {
+            $('#t_start_time1').val(moment().subtract(6, 'h').format('YYYY-MM-DD HH:mm'));
+            $('#t_end_time1').val(moment().format('YYYY-MM-DD HH:mm'));
+            $('#t_start_time2').val(moment().subtract(30, 'h').format('YYYY-MM-DD HH:mm'));
+            $('#start_time').val(moment().subtract(6, 'h').format('YYYY-MM-DD HH:mm'));
+            $('#end_time').val(moment().format('YYYY-MM-DD HH:mm'));
+        }
+        //    时间计算
+        function Time_calculation() {
+            var t_start_time1 = moment($('#t_start_time1')[0].value).format('X');
+            var t_end_time1 = moment($('#t_end_time1')[0].value).format('X');
+            var t_start_time2 = moment($('#t_start_time2')[0].value).format('X');
+            var t_end_time2 = moment.unix(parseInt(t_start_time2) + (t_end_time1 - t_start_time1)).format('YYYY-MM-DD HH:mm');
+            if (t_end_time2 == "Invalid date") {
+                $("#t_end_time2").val("请选择正确的时间！");
+            } else {
+                $("#t_end_time2").val(t_end_time2);
+            }
+        }
+        //    获取数据
+        // 常规查询图标生成
+        function setOptionCg(x, y, yName, charts) {
+            charts.hideLoading();
+            charts.setOption({
+                    title: {
+                        text: "快递卸车量"
+                    },
+                    tooltip: {
+                        trigger: "axis"
+                    },
+                    toolbox: {
+                        show: true,
+                        feature: {
+                            dataZoom: {
+                                yAxisIndex: 'none'
+                            },
+                            dataView: {readOnly: false},
+                            magicType: {type: ['line', 'bar']},
+                            restore: {},
+                            saveAsImage: {}
+                        }
+                    },
+                    xAxis: {
+                        data: x
+                    },
+                    yAxis: {},
+                    series: [{
+                        name: yName,
+                        type: "bar",
+                        data: y
+                    }]
+                }
+            );
+        }
+        // 对比查询图标生成
+        function setOptionDb(x, y1, y2, yName, charts) {
+            charts.hideLoading();
+            charts.setOption({
+                    title: {
+                        text: "快递卸车量"
+                    },
+                    tooltip: {
+                        trigger: "axis"
+                    },
+                    toolbox: {
+                        show: true,
+                        feature: {
+                            dataZoom: {
+                                yAxisIndex: 'none'
+                            },
+                            dataView: {readOnly: false},
+                            magicType: {type: ['line', 'bar']},
+                            restore: {},
+                            saveAsImage: {}
+                        }
+                    },
+                    xAxis: {
+                        data: x
+                    },
+                    yAxis: {},
+                    series: [{
+                        name: yName[0],
+                        type: "bar",
+                        data: y1
+                    }, {
+                        name: yName[1],
+                        type: "bar",
+                        data: y2
+                    }]
+                }
+            );
+        }
+        function get_data() {
+            var charts = echarts.init(document.getElementById('main'));
+            // 使用刚指定的配置项和数据显示图表。
+            $.ajax({
+                cache: false,
+                type: "get",
+                url: '/api/business/express/unload', //把表单数据发送到/weather
+                data: $("form").serialize(), // 发送的数据
+                dataType: "json",  //返回数据形式为json
+                async: true,
+                beforeSend: function () {
+                    charts.showLoading();
+                },
+                error: function (request) {
+                    alert("发送请求失败！");
+                    charts.hideLoading();
+                },
+                success: function (result) {
+                    var form = $("form").serializeArray();
+                    if (form[0]['value'] === "cg") {
+                        var xAxis = [];
+                        var yAxis = [];
+                        var yName = form[1]['value'] + "至" + form[2]['value'];
+                        for (var row in result) {
+                            xAxis.push(result[row]['key']);
+                            yAxis.push(result[row]['value'])
+                        }
+                        setOptionCg(xAxis, yAxis, yName, charts)
+                    } else {
+                        var xAxis = [];
+                        var yAxis1 = [];
+                        var yAxis2 = [];
+                        var yName = [form[3]['value'] + "至" + form[4]['value'],form[5]['value'] + "至" + form[6]['value']];
+                        for (var row in result) {
+                            xAxis.push(result[row]['key']);
+                            yAxis1.push(result[row]['value1']);
+                            yAxis2.push(result[row]['value2'])
+                        }
+                        setOptionDb(xAxis, yAxis1, yAxis2,yName,charts)
+                    }
+                }
+            });
+        }
+
+        $('.form_datetime').change(function () {
+            Time_calculation();
+        });
+        $('#raido_cx input[name="type"]').click(
+            function () {
+                if ($('#raido_cx input[name="type"]:checked ').val() == "cg") {
+                    $("#t_time_condition").css("display", "none");
+                    $("#time_condition").css("display", "block");
+                    $("#t_divgrouby").css("display", "none");
+                    $("#divgrouby").css("display", "block");
+                } else if ($('#raido_cx input[name="type"]:checked ').val() == "db") {
+                    $("#t_time_condition").css("display", "block");
+                    $("#time_condition").css("display", "none");
+                    $("#divgrouby").css("display", "none");
+                    $("#t_divgrouby").css("display", "block");
+                }
+            }
+        );
+        $("#submit").click(function () {
+            get_data()
+        });
+
+    </script>
+{% endblock %}
