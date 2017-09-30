@@ -48,16 +48,7 @@ INSTALLED_APPS = [
 ]
 
 INSTALLED_APPS += [
-    'Business',
-    'Reports',
-    'System',
-    'Host',
-    'common',
-    'Instantiation',
-    'Monitor',
-    'Network',
-    'Databases',
-    'BaseConfig'
+    'common'
 ]
 
 MIDDLEWARE = [

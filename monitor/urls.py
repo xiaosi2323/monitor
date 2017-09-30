@@ -13,7 +13,7 @@ Including another URLconf
     1. Import the include() function: from django.conf.urls import url, include
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
-from django.conf.urls import url,include
+from django.conf.urls import url, include
 from django.contrib import admin
 from django.conf.urls.static import static
 from rest_framework.authtoken import views
@@ -26,20 +26,9 @@ urlpatterns = [
     url(r'^', include('common.urls')),
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
-urlpatterns+=[
-    url(r'^api/business/', include('Business.api_urls')),
-    url(r'^api/monitor/', include('Monitor.api_urls')),
-    url(r'^api/system/', include('System.api_urls')),
-    url(r'^api/instantiation/', include('Instantiation.api_urls')),
-    url(r'^api/host/', include('Host.api_urls')),
-    url(r'^api/databases/', include('Databases.api_urls')),
+urlpatterns += [
 ]
 
-urlpatterns+=[
-    url(r'^business/', include('Business.urls')),
-    url(r'^report/', include('Reports.urls')),
-    url(r'^system/', include('System.urls')),
-    url(r'^host/', include('Host.urls')),
-    url(r'^instantiation/', include('Instantiation.urls')),
-    url(r'^base/config/', include('BaseConfig.urls')),
+urlpatterns += [
+    # url(r'^tp/', include('tp.urls')),
 ]
